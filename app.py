@@ -1,19 +1,15 @@
 # ──────────────────────────────────────────────────────────────
-# app.py  –  Eye‑Disease Predictor (Streamlit Cloud ready)
+# app.py  –  Eye‑Disease Predictor (Streamlit Cloud)
 # ──────────────────────────────────────────────────────────────
 import os
 import streamlit as st
 import numpy as np
 from PIL import Image
 
-# --------------------------------------------------------------
-# 1. Silence TF warnings (optional but clean)
-# --------------------------------------------------------------
+# silence TF warnings
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
 
-# --------------------------------------------------------------
-# 2. CLASS NAMES – **EXACTLY the folder names you trained on**
-# --------------------------------------------------------------
+# ── UPDATE THIS LIST WITH YOUR EXACT TRAINING FOLDER NAMES ──
 CLASSES = [
     "Cataract",
     "Diabetic_Retinopathy",
@@ -23,16 +19,13 @@ CLASSES = [
     "Retina_disease"
 ]
 
-# --------------------------------------------------------------
-# 3. Load model – TF imports happen *inside* the function
-# --------------------------------------------------------------
+# ── Load model (imports TF only when needed) ──
 @st.cache_resource
-def get_model():
+def load_model():
     path = "final_model.keras"
     if not os.path.exists(path):
-        st.error("`final_model.keras` is missing from the repo.")
+        st.error("`final_model.keras` not found in the repo.")
         return None, None
-
     try:
         from tensorflow.keras.models import load_model
         from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
@@ -40,14 +33,12 @@ def get_model():
         st.success("Model loaded!")
         return mdl, preprocess_input
     except Exception as e:
-        st.error(f"Failed to load model: **{e}**")
+        st.error(f"Load error: **{e}**")
         return None, None
 
-model, preprocess = get_model()
+model, preprocess = load_model()
 
-# --------------------------------------------------------------
-# 4. Prediction
-# --------------------------------------------------------------
+# ── Prediction ──
 def predict(img_file):
     if model is None:
         return None, 0.0
@@ -58,12 +49,10 @@ def predict(img_file):
     idx = int(np.argmax(probs))
     return CLASSES[idx], float(probs[idx])
 
-# --------------------------------------------------------------
-# 5. UI
-# --------------------------------------------------------------
+# ── UI ──
 st.set_page_config(page_title="Eye Disease Detector", page_icon="eyes")
 st.title("eyes Eye Disease Prediction")
-st.caption("Upload a **fundus** image – *educational demo only*")
+st.caption("*Upload a fundus image – educational demo only*")
 
 if model is None:
     st.stop()
@@ -75,8 +64,8 @@ if file:
         label, conf = predict(file)
 
     if label == "Normal":
-        st.success(f"**{label}** – {conf:.1%} confidence")
+        st.success(f"**{label}** – {conf:.1%}")
         st.balloons()
     else:
-        st.error(f"**{label.replace('_', ' ')}** – {conf:.1%} confidence")
+        st.error(f"**{label.replace('_', ' ')}** – {conf:.1%}")
         st.warning("Consult an ophthalmologist – this is **not** a diagnosis.")
